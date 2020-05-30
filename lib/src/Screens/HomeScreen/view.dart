@@ -1,3 +1,4 @@
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -14,25 +15,30 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  FirebaseDatabase _dataBase;
+
+  @override
+  void initState() {
+    _dataBase = FirebaseDatabase.instance;
+    super.initState();
+  }
+
+  void getAllUsers() {
+    _dataBase.reference().child("users").onChildAdded;
+  }
+
   Widget workerCard({String name, String phoneNum, String address}) {
     return Container(
       width: MediaQuery.of(context).size.width,
       height: 100,
       margin: EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        // color: Color(getColorHexFromStr("d63447")),
-        // borderRadius: BorderRadius.circular(10),
-      ),
+      decoration: BoxDecoration(),
       child: Row(
         children: <Widget>[
           Container(
             height: 100,
             width: 100,
             decoration: BoxDecoration(
-              // color: Color(getColorHexFromStr("d63447")),
-              // borderRadius: BorderRadius.only(
-              //     bottomRight: Radius.circular(10),
-              //     topRight: Radius.circular(10)),
               image: DecorationImage(
                 image: AssetImage("assets/icons/engineers.png"),
                 fit: BoxFit.contain,
@@ -47,10 +53,9 @@ class _HomeScreenState extends State<HomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               Text(
-                'احمد عبدالمنعم محمد عزب',
+                name ?? "",
                 style: GoogleFonts.cairo(
                   fontSize: 18,
-                  // color: Color(getColorHexFromStr("fc8210")),
                   color: CupertinoColors.black,
                 ),
               ),
@@ -64,7 +69,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     width: 5,
                   ),
                   Text(
-                    '01281810921',
+                    phoneNum ?? "",
                     style: GoogleFonts.cairo(
                       fontSize: 15,
                       color: CupertinoColors.black,
@@ -82,7 +87,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     width: 5,
                   ),
                   Text(
-                    'برمكيم - ديرب نجم',
+                    address ?? "",
                     style: GoogleFonts.cairo(
                       fontSize: 15,
                       color: CupertinoColors.black,
@@ -95,6 +100,11 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
     );
+  }
+
+  void _remove(String id) async {
+    print(id);
+    await _dataBase.reference().child("users").child(id).remove();
   }
 
   @override
@@ -116,22 +126,74 @@ class _HomeScreenState extends State<HomeScreen> {
         floatingActionButton: FloatingActionButton(
           backgroundColor: Color(getColorHexFromStr("fc8210")),
           onPressed: () {
-              Get.to(AddWorkerScreen());
+            Get.to(AddWorkerScreen());
           },
           child: Center(child: Icon(Icons.person_add)),
         ),
-        body: ListView.separated(
-          separatorBuilder: (context, index) {
-                          return Divider();
-                        },
-            itemCount: 10,
-            itemBuilder: (context, index) {
-              return InkWell(
-                  onTap: () {
-                    Get.to(WorkerDetailScreen());
+        body: StreamBuilder(
+          stream: _dataBase.reference().child("users").onValue,
+          initialData: null,
+          builder: (BuildContext context, AsyncSnapshot<Event> result) {
+            if (result.hasError) {
+              return Text("No Data");
+            } else if (result.hasData) {
+              print("-0-0-0-");
+              print("data => ${result.data.snapshot.value}");
+              List<Map<String, dynamic>> allUsers = [];
+              (result.data.snapshot.value as Map).forEach((key, value) {
+                print(value);
+
+                allUsers.add({
+                  "id": key,
+                  "name": value['name'],
+                  "phone": value['phone'],
+                  "address": value['address'],
+                });
+              });
+              return ListView.separated(
+                  separatorBuilder: (context, index) {
+                    return Divider();
                   },
-                  child: workerCard());
-            }),
+                  itemCount: allUsers.length,
+                  itemBuilder: (context, index) {
+                    return InkWell(
+                      onTap: () {
+                        Get.to(WorkerDetailScreen(
+                          userId: allUsers[index]['id'],
+                        ));
+                      },
+                      child: Stack(
+                        children: <Widget>[
+                          workerCard(
+                            name: allUsers[index]['name'],
+                            phoneNum: allUsers[index]['phone'],
+                            address: allUsers[index]['address'],
+                          ),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: InkWell(
+                                onTap: () {
+                                  _remove(allUsers[index]['id']);
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Icon(Icons.close),
+                                )),
+                          ),
+                        ],
+                      ),
+                    );
+                  });
+            } else {
+              return Center(
+                child: CupertinoActivityIndicator(
+                  animating: true,
+                  radius: 14,
+                ),
+              );
+            }
+          },
+        ),
       ),
     );
   }

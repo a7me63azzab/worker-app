@@ -1,6 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:workerapp/src/Screens/AddWorkerScreen.dart/service.dart';
+import 'package:workerapp/src/Screens/HomeScreen/view.dart';
+// import 'package:workerapp/src/Screens/AddWorkerScreen.dart/service.dart';
 import 'package:workerapp/src/Utils/ColorsTransform.dart';
 
 class AddWorkerScreen extends StatefulWidget {
@@ -11,6 +15,25 @@ class AddWorkerScreen extends StatefulWidget {
 }
 
 class _AddWorkerScreenState extends State<AddWorkerScreen> {
+  AddWorker addWorker = AddWorker();
+
+  GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
+  Map<String, dynamic> userData = {"name": "", "phone": "", "address": ""};
+
+  void _submit(BuildContext context) {
+    if (!_formKey.currentState.validate()) {
+      return;
+    } else {
+      _formKey.currentState.save();
+      addWorker.addNewworker(
+          name: userData['name'],
+          phone: userData['phone'],
+          address: userData['address']);
+      Get.off(HomeScreen());
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Directionality(
@@ -31,6 +54,7 @@ class _AddWorkerScreenState extends State<AddWorkerScreen> {
           centerTitle: true,
         ),
         body: Form(
+          key: _formKey,
           child: Column(
             children: <Widget>[
               Padding(
@@ -40,6 +64,18 @@ class _AddWorkerScreenState extends State<AddWorkerScreen> {
                   style: GoogleFonts.cairo(
                     color: Color(getColorHexFromStr("d63447")),
                   ),
+                  onSaved: (value) {
+                    setState(() {
+                      userData['name'] = value;
+                    });
+                  },
+                  validator: (value) {
+                    if (value.isEmpty) {
+                      return "يجب ادخال الاسم";
+                    } else {
+                      return null;
+                    }
+                  },
                   decoration: InputDecoration(
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -78,6 +114,18 @@ class _AddWorkerScreenState extends State<AddWorkerScreen> {
                   style: GoogleFonts.cairo(
                     color: Color(getColorHexFromStr("d63447")),
                   ),
+                  onSaved: (value) {
+                    setState(() {
+                      userData['phone'] = value;
+                    });
+                  },
+                  validator: (value) {
+                    if (value.isEmpty) {
+                      return "يجب ادخال رقم الجوال";
+                    } else {
+                      return null;
+                    }
+                  },
                   decoration: InputDecoration(
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -116,6 +164,18 @@ class _AddWorkerScreenState extends State<AddWorkerScreen> {
                   style: GoogleFonts.cairo(
                     color: Color(getColorHexFromStr("d63447")),
                   ),
+                  onSaved: (value) {
+                    setState(() {
+                      userData['address'] = value;
+                    });
+                  },
+                  validator: (value) {
+                    if (value.isEmpty) {
+                      return "يجب ادخال العنوان";
+                    } else {
+                      return null;
+                    }
+                  },
                   decoration: InputDecoration(
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -148,6 +208,9 @@ class _AddWorkerScreenState extends State<AddWorkerScreen> {
                 ),
               ),
               InkWell(
+                onTap: () {
+                  _submit(context);
+                },
                 child: Container(
                   width: 100,
                   height: 50,

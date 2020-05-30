@@ -1,12 +1,16 @@
 //Expenses
 
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:workerapp/src/Screens/WorkerDetailScreen.dart/view.dart';
 import 'package:workerapp/src/Utils/ColorsTransform.dart';
 
 class AddWorkerExpensesScreen extends StatefulWidget {
-  AddWorkerExpensesScreen({Key key}) : super(key: key);
+  final String userId;
+  AddWorkerExpensesScreen({Key key, this.userId}) : super(key: key);
 
   @override
   _AddWorkerExpensesScreenState createState() =>
@@ -14,6 +18,33 @@ class AddWorkerExpensesScreen extends StatefulWidget {
 }
 
 class _AddWorkerExpensesScreenState extends State<AddWorkerExpensesScreen> {
+  GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
+  Map<String, dynamic> data = {"money": "", "date": "", "note": ""};
+
+  void onSubmit(BuildContext context) {
+    if (!_formKey.currentState.validate()) {
+      return;
+    } else {
+      _formKey.currentState.save();
+      FirebaseDatabase.instance
+          .reference()
+          .child("users")
+          .child(widget.userId)
+          .child("expenses")
+          .push()
+          .set({
+        "money": data['money'],
+        "date": DateTime.now().toString(),
+        "note": data['note'],
+      });
+
+      Get.off(WorkerDetailScreen(
+        userId: widget.userId,
+      ));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Directionality(
@@ -34,12 +65,24 @@ class _AddWorkerExpensesScreenState extends State<AddWorkerExpensesScreen> {
           centerTitle: true,
         ),
         body: Form(
+          key: _formKey,
           child: SingleChildScrollView(
             child: Column(
               children: <Widget>[
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: TextFormField(
+                    onSaved: (value) {
+                      setState(() {
+                        data['money'] = value;
+                      });
+                    },
+                    validator: (value) {
+                      if (value.isEmpty) {
+                        return "المبلغ مطلوب";
+                      } else
+                        return null;
+                    },
                     keyboardType: TextInputType.number,
                     style: GoogleFonts.cairo(
                       color: Color(getColorHexFromStr("d63447")),
@@ -78,6 +121,17 @@ class _AddWorkerExpensesScreenState extends State<AddWorkerExpensesScreen> {
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: TextFormField(
+                    onSaved: (value) {
+                      setState(() {
+                        data['date'] = value;
+                      });
+                    },
+                    validator: (value) {
+                      if (value.isEmpty) {
+                        return "التاريخ مطلوب";
+                      } else
+                        return null;
+                    },
                     keyboardType: TextInputType.text,
                     style: GoogleFonts.cairo(
                       color: Color(getColorHexFromStr("d63447")),
@@ -117,6 +171,17 @@ class _AddWorkerExpensesScreenState extends State<AddWorkerExpensesScreen> {
                   padding: const EdgeInsets.all(8.0),
                   child: TextFormField(
                     keyboardType: TextInputType.text,
+                    onSaved: (value) {
+                      setState(() {
+                        data['note'] = value;
+                      });
+                    },
+                    validator: (value) {
+                      if (value.isEmpty) {
+                        return "الملاحظه مطلوبه";
+                      } else
+                        return null;
+                    },
                     maxLines: 5,
                     style: GoogleFonts.cairo(
                       color: Color(getColorHexFromStr("d63447")),
@@ -153,6 +218,9 @@ class _AddWorkerExpensesScreenState extends State<AddWorkerExpensesScreen> {
                   ),
                 ),
                 InkWell(
+                  onTap: () {
+                    onSubmit(context);
+                  },
                   child: Container(
                     width: 100,
                     height: 50,
